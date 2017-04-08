@@ -6,13 +6,15 @@ var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var exphbs  = require('express-handlebars');
 var conditionalHelpers = require(__dirname + '/src/server/helpers/conditionals.js');
+var clientSrc = require(__dirname + '/src/server/helpers/clientsrc.js')
 var serveStatic = require('serve-static');
 
 var hbs = exphbs.create({
     // Specify helpers which are only registered on this instance.
     helpers: {
         equal: conditionalHelpers.equalHelper, 
-        compare: conditionalHelpers.compareHelper
+        compare: conditionalHelpers.compareHelper,
+        clientSrc: clientSrc.srcHelper
     },
     partialsDir: __dirname + '/src/server/views/partials',
     layoutsDir: __dirname + '/src/server/views/layouts',
@@ -35,9 +37,8 @@ app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(serveStatic('public/ftp', {'index': ['default.html', 'default.htm']}));
-
 app.use('/', routes);
+app.use(serveStatic(path.join(__dirname, 'public')));
 
 
 // catch 404 and forward to error handler
