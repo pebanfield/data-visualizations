@@ -1,5 +1,5 @@
 import React from 'react';
 import { render } from 'react-dom';
-import App from './App.jsx';
+import Main from './Main.jsx';
 
-render( <App/>, document.querySelector("#app"));
+render( <Main/>, document.querySelector('#app'));

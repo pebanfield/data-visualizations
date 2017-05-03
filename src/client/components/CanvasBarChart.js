@@ -1,15 +1,17 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 
-class CanvasChart extends React.Component {
+class CanvasBarChart extends React.Component {
 
   componentDidMount() {
+
     // Init CreateJS
-    var canvas = ReactDOM.findDOMNode(this.refs.canvas);
+    const canvas = ReactDOM.findDOMNode(this.refs.canvas);
+    /*eslint-disable */
     this.stage = new createjs.Stage(canvas);
     createjs.Ticker.addEventListener('tick', this.stage);
     createjs.Ticker.setFPS(45);
-
+    /*eslint-enable */
 
     // Set Properties
     this.canvasWidth = this.stage.canvas.width;
@@ -19,7 +21,6 @@ class CanvasChart extends React.Component {
     this.animationSpeed = this.props.animationSpeed || 300;
     this.staggerDelay = this.props.staggerDelay || 20;
     this.rotation = this.props.rotation || 0;
-
 
     // Draw Chart first time
     if (this.props.data) {
@@ -39,17 +40,18 @@ class CanvasChart extends React.Component {
 
   hidePreviousChart(data) {
 
+    /*eslint-disable */
     // Remove previous tween applied to the chart
     createjs.Tween.removeTweens(this.group);
 
-    var _grp = this.group;
-    var _total = _grp.getNumChildren();
+    const _grp = this.group;
+    const _total = _grp.getNumChildren();
 
     // Remove previous chart
-    for (var i = 0; i < _total; i++) {
+    for (let i = 0; i < _total; i++) {
 
       // Get a single bar reference and remove previous tweens
-      var _bar = _grp.getChildAt(i);
+      const _bar = _grp.getChildAt(i);
       createjs.Tween.removeTweens(_bar);
 
       // Hide a Bar
@@ -60,42 +62,45 @@ class CanvasChart extends React.Component {
           scaleX: 3,
           rotation: this.rotation
         }, this.animationSpeed, createjs.Ease.cubicInOut)
-        .call(function(bar) {
-          _grp.removeChild(bar)
-        }.bind(this),[_bar]);
+        .call((bar) => {
+          _grp.removeChild(bar);
+        }, [_bar]);
     }
 
     // Draw next chart after previous animation
-    var totalTime = this.animationSpeed + (_total * this.staggerDelay);
+    const totalTime = this.animationSpeed + (_total * this.staggerDelay);
     createjs.Tween.get(_grp)
       .wait(totalTime)
-      .call(this.draw,[data]);
+      .call(() => this.draw(data));
 
+    /*eslint-enable */
   }
 
   draw(data) {
+
+    /*eslint-disable */
 
     this.group = new createjs.Container();
     this.stage.addChild(this.group);
 
     // Total of bars
-    var _total = data.length;
+    const _total = data.length;
 
     // Bar width
-    var _barWidth = (this.canvasWidth / _total) - this.padding;
+    const _barWidth = (this.canvasWidth / _total) - this.padding;
 
     // Create and display bars
-    for (var i = 0; i < _total; i++) {
+    for (let i = 0; i < _total; i++) {
 
-      var _barHeight = this.canvasHeight * (data[i] / 100);
+      const _barHeight = this.canvasHeight * (data[i] / 100);
 
       // Draw a Rectangle
-      var bar = new createjs.Graphics();
+      const bar = new createjs.Graphics();
       bar.beginFill(this.color);
       bar.drawRect(0, 0, _barWidth, _barHeight);
 
       // Show the Bar and set the position (x,y)
-      var barShape = new createjs.Shape(bar);
+      const barShape = new createjs.Shape(bar);
       barShape.x = (_barWidth + this.padding) * i;
       barShape.y = this.canvasHeight + _barHeight;
       barShape.rotation = this.rotation;
@@ -111,21 +116,19 @@ class CanvasChart extends React.Component {
           rotation: 0
         }, 1000, createjs.Ease.cubicInOut);
     }
-    //this.stage.update();
+
+    /*eslint-enable */
   }
 
   render() {
     return (
-      <canvas ref="canvas"
-              width={this.props.width}
-              height={this.props.height}></canvas>
+      <canvas ref='canvas' width={this.props.width} height={this.props.height}></canvas>
     );
   }
 
-
 }
 
-CanvasChart.propTypes = {
+CanvasBarChart.propTypes = {
   width: React.PropTypes.number.isRequired,
   height: React.PropTypes.number.isRequired,
   colorBar: React.PropTypes.string,
@@ -134,6 +137,6 @@ CanvasChart.propTypes = {
   hpadding: React.PropTypes.number,
   rotation: React.PropTypes.number,
   data: React.PropTypes.arrayOf(React.PropTypes.number)
-}
+};
 
-export default CanvasChart;
+export default CanvasBarChart;
