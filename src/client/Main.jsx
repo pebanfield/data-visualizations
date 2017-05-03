@@ -1,8 +1,9 @@
-import React from 'react';
-import { render } from 'react-dom';
+import React, { Component, PropTypes } from 'react';
 // https://github.com/CreateJS/EaselJS/issues/713
 import 'script-loader!CreateJS/builds/createjs-2015.11.26.combined.js';
 import './index.scss';
+import { connect } from 'react-redux';
+import { selectSubreddit, fetchPostsIfNeeded, invalidateSubreddit } from './actions';
 // import Sample from './components/Sample.js';
 import CanvasLineChart from './components/CanvasLineChart.js';
 import App from 'grommet/components/App';
@@ -14,11 +15,15 @@ import Meter from 'grommet/components/Meter';
 import Value from 'grommet/components/Value';
 import Label from 'grommet/components/Label';
 import Legend from 'grommet/components/Legend';
+import Picker from './components/Picker';
+import Posts from './components/Posts';
 
-export default class Main extends React.Component {
+class Main extends Component {
 
   constructor(props, context) {
     super(props, context);
+    this.handleChange = this.handleChange.bind(this);
+    this.handleRefreshClick = this.handleRefreshClick.bind(this);
     this.state = {
       chartData: [{x: 5, y: 10}, {x: 5, y: 20}, {x: 20, y: 50}, {x: 30, y: 40}]
     };
@@ -26,7 +31,30 @@ export default class Main extends React.Component {
   // Component Mount (init)
   componentDidMount() {
     // this.updateData(10, 15, 30, 100);
+    const { dispatch, selectedSubreddit } = this.props;
+    dispatch(fetchPostsIfNeeded(selectedSubreddit));
   }
+
+  componentDidUpdate(prevProps) {
+    if (this.props.selectedSubreddit !== prevProps.selectedSubreddit) {
+      const { dispatch, selectedSubreddit } = this.props;
+      dispatch(fetchPostsIfNeeded(selectedSubreddit));
+    }
+  }
+
+  handleChange(nextSubreddit) {
+    this.props.dispatch(selectSubreddit(nextSubreddit));
+    this.props.dispatch(fetchPostsIfNeeded(nextSubreddit));
+  }
+
+  handleRefreshClick(e) {
+    e.preventDefault()
+
+    const { dispatch, selectedSubreddit } = this.props;
+    dispatch(invalidateSubreddit(selectedSubreddit));
+    dispatch(fetchPostsIfNeeded(selectedSubreddit));
+  }
+
   // Generate random data
   updateData(minBars, maxBars, minValue, maxValue) {
     const elements = [];
@@ -63,11 +91,11 @@ export default class Main extends React.Component {
 
     function clickHandler(evt) {};
     let series =
-      [{"label": "Gen 7", "value": 50, "onClick": clickHandler, "colorIndex": "graph-1"},
-        {"label": "Gen 8", "value": 1, "onClick": clickHandler, "colorIndex": "graph-2"},
-        {"label": "Gen 9", "value": 19, "onClick": clickHandler, "colorIndex": "graph-3"},
-        {"label": "Gen 10", "value": 30, "onClick": clickHandler, "colorIndex": "graph-4"}];
-
+      [{label: 'Gen 7', value: 50, onClick: clickHandler, colorIndex: 'graph-1'},
+        {label: 'Gen 8', value: 1, onClick: clickHandler, colorIndex: 'graph-2'},
+        {label: 'Gen 9', value: 19, onClick: clickHandler, colorIndex: 'graph-3'},
+        {label: 'Gen 10', value: 30, onClick: clickHandler, colorIndex: 'graph-4'}];
+    const { selectedSubreddit, posts, isFetching, lastUpdated } = this.props;
     return (
       <App centered={true}>
         <Header>Charting</Header>
@@ -83,6 +111,36 @@ export default class Main extends React.Component {
                          hpadding={4}
                          rotation={90}
                          data={this.state.chartData}/>
+            <div>
+              <Picker value={selectedSubreddit}
+                      onChange={this.handleChange}
+                      options={['reactjs', 'frontend']} />
+              <p>
+                {lastUpdated &&
+                <span>
+              Last updated at {new Date(lastUpdated).toLocaleTimeString()}.
+                  {' '}
+            </span>
+                }
+                {!isFetching &&
+                <a href='#'
+                   onClick={this.handleRefreshClick}>
+                  Refresh
+                </a>
+                }
+              </p>
+              {isFetching && posts.length === 0 &&
+              <h2>Loading...</h2>
+              }
+              {!isFetching && posts.length === 0 &&
+              <h2>Empty.</h2>
+              }
+              {posts.length > 0 &&
+              <div style={{ opacity: isFetching ? 0.5 : 1 }}>
+                <Posts posts={posts} />
+              </div>
+              }
+            </div>
           </Box>
           <Box justify='center'
                align='center'
@@ -125,3 +183,32 @@ export default class Main extends React.Component {
     );
   }
 }
+
+Main.propTypes = {
+  selectedSubreddit: PropTypes.string.isRequired,
+  posts: PropTypes.array.isRequired,
+  isFetching: PropTypes.bool.isRequired,
+  lastUpdated: PropTypes.number,
+  dispatch: PropTypes.func.isRequired
+};
+
+function mapStateToProps(state) {
+  const { selectedSubreddit, postsBySubreddit } = state
+  const {
+    isFetching,
+    lastUpdated,
+    items: posts
+  } = postsBySubreddit[selectedSubreddit] || {
+    isFetching: true,
+    items: []
+  };
+
+  return {
+    selectedSubreddit,
+    posts,
+    isFetching,
+    lastUpdated
+  };
+}
+
+export default connect(mapStateToProps)(Main);

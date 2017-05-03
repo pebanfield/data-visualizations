@@ -35,6 +35,7 @@ class CanvasLineChart extends React.Component {
 
   hidePreviousChart(data) {
 
+    console.log(data);
     /*eslint-disable */
 
     /*eslint-enable */
